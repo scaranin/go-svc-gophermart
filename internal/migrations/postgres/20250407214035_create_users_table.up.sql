@@ -1,0 +1,7 @@
+CREATE TABLE users (
+    id_user SERIAL PRIMARY KEY,
+    name_user VARCHAR(100) NOT NULL,
+    pass_user VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active NUMERIC DEFAULT 1
+);
