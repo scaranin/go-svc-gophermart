@@ -1,4 +1,4 @@
-package routerAPI
+package routerapi
 
 import (
 	"go-svc-gophermart/internal/handlers"

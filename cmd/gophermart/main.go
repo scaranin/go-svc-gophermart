@@ -4,7 +4,7 @@ import (
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/handlers"
 	"go-svc-gophermart/internal/repositories"
-	"go-svc-gophermart/internal/routerAPI"
+	"go-svc-gophermart/internal/routerapi"
 	"log"
 	"net/http"
 )
@@ -24,7 +24,7 @@ func main() {
 	}
 	log.Println("Up!")
 
-	router := routerAPI.NewRouter(&h)
+	router := routerapi.NewRouter(&h)
 	log.Println("Setup configuration!")
 
 	log.Println("Start server on ", cfg.ServerURL)
