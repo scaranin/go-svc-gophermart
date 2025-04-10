@@ -1,9 +1,13 @@
 package handlers
 
-import "runtime"
+import (
+	"go-svc-gophermart/internal/repositories"
+	"runtime"
+)
 
+// Основная структура со списком обработчиков
 type URLHandler struct {
-	configList string
+	Repo repositories.GopherMart
 }
 
 // Функция для получения имени текущего метода

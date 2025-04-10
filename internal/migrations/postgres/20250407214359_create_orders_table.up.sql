@@ -7,10 +7,5 @@ CREATE TABLE orders (
     status VARCHAR(50) NOT NULL,
     bonus_sum DECIMAL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(user_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX idx_orders_user_id ON orders(user_id);

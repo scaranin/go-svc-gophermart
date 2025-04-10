@@ -17,15 +17,11 @@ type Order interface {
 
 type Balance interface {
 	GetUserBalance() (models.Balance, error)
-	RequestOrderAccrual(models.BalanceWithDraw, error) error
+	RequestOrderAccrual(models.BalanceWithDraw) error
 }
 
 type GopherMart interface {
 	User
 	Order
 	Balance
-}
-
-type Repository interface {
-	NewRepository(DSN string) (GopherMart, error)
 }

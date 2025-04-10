@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/handlers"
+	"go-svc-gophermart/internal/repositories"
 	"go-svc-gophermart/internal/routerAPI"
 	"log"
 	"net/http"
@@ -15,23 +15,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(cfg)
-	//var t repositories.RepoDBPostgres
+	var h handlers.URLHandler
 
-	//repositories.Repository.NewRepository(cfg.DSN)// .CreateStore(cfg)
+	h.Repo, err = repositories.NewRepository(cfg.DSN)
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		auth := auth.NewAuthConfig()
-	*/
 	log.Println("Up!")
-	var h handlers.URLHandler
 
 	router := routerAPI.NewRouter(&h)
 	log.Println("Setup configuration!")
 
-	err = http.ListenAndServe("localhost:8080", router)
+	log.Println("Start server on ", cfg.ServerURL)
+	err = http.ListenAndServe(cfg.ServerURL, router)
 	if err != nil {
 		log.Fatal(err)
 	}
