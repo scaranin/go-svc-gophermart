@@ -22,8 +22,10 @@ require (
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.2 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
