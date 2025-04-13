@@ -1,4 +1,4 @@
-package routerapi
+package router
 
 import (
 	"go-svc-gophermart/internal/handlers"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// Формирование ApiRoutes
+// Формирование Routes
 //
 // Входные параметры: h *handlers.URLHandler - структура с конфигурациями
 func NewRouter(h *handlers.URLHandler) *chi.Mux {
