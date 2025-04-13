@@ -1,24 +1,22 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 )
 
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID string
+	Login string
 }
 
 type AuthConfig struct {
 	CookieName string
 	SecretKey  string
 	TokenExp   time.Duration
-	UserID     string
+	Login      string
 }
 
 func NewAuthConfig() AuthConfig {
@@ -29,35 +27,32 @@ func NewAuthConfig() AuthConfig {
 	}
 }
 
-// BuildJWTString создаёт токен и возвращает его в виде строки.
+// Создаёт токен и возвращает его в виде строки
+//
+// Используем уникальное имя пользователя
 func (auth *AuthConfig) BuildJWTString() (string, error) {
-	// создаём новый токен с алгоритмом подписи HS256 и утверждениями — Claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			// когда создан токен
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(auth.TokenExp)),
 		},
-		// собственное утверждение
-		UserID: uuid.New().String(),
+		Login: auth.Login,
 	})
 
-	// создаём строку токена
 	authToken, err := token.SignedString([]byte(auth.SecretKey))
 	if err != nil {
 		return "", err
 	}
 
-	// возвращаем строку токена
-	return authToken, nil
+	return authToken, err
 }
 
-// FillUserReturnToken возвращает authToken, UserID записывается в auth.UserID
+// Формируем coockie. Login записывается в auth.Login
 func (auth *AuthConfig) FillUserReturnCookie(incomeCookie *http.Cookie) (*http.Cookie, error) {
 	var (
 		resAuthToken string
 		err          error
 	)
-	fmt.Println(incomeCookie)
+
 	if incomeCookie != nil {
 		resAuthToken = incomeCookie.Value
 	}
@@ -66,15 +61,15 @@ func (auth *AuthConfig) FillUserReturnCookie(incomeCookie *http.Cookie) (*http.C
 		resAuthToken, err = auth.BuildJWTString()
 	}
 	claims := &Claims{}
-	// парсим из строки токена tokenString в структуру claims
+
 	jwt.ParseWithClaims(resAuthToken, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(auth.SecretKey), nil
 	})
 
-	if len(claims.UserID) == 0 {
+	if len(claims.Login) == 0 {
 		err = http.ErrNoCookie
 	} else {
-		auth.UserID = claims.UserID
+		auth.Login = claims.Login
 	}
 	cookie := &http.Cookie{
 		Name:     auth.CookieName,
@@ -83,6 +78,5 @@ func (auth *AuthConfig) FillUserReturnCookie(incomeCookie *http.Cookie) (*http.C
 		HttpOnly: true,
 		Path:     "/",
 	}
-	// возвращаем ID пользователя в читаемом виде
 	return cookie, err
 }

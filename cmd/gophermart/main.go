@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go-svc-gophermart/internal/auth"
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/handlers"
 	"go-svc-gophermart/internal/repositories"
@@ -18,6 +19,8 @@ func main() {
 	var h handlers.URLHandler
 
 	h.Repo, err = repositories.NewRepository(cfg.DSN)
+
+	h.Auth = auth.NewAuthConfig()
 
 	if err != nil {
 		log.Fatal(err)

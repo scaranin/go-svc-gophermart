@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"go-svc-gophermart/internal/auth"
 	"go-svc-gophermart/internal/repositories"
 	"runtime"
 )
@@ -8,6 +9,7 @@ import (
 // Основная структура со списком обработчиков
 type URLHandler struct {
 	Repo repositories.GopherMart
+	Auth auth.AuthConfig
 }
 
 // Функция для получения имени текущего метода
