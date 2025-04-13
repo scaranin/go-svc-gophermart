@@ -46,7 +46,7 @@ func (auth *AuthConfig) BuildJWTString() (string, error) {
 	return authToken, err
 }
 
-// Формируем coockie. Login записывается в auth.Login
+// Формируем ответный coockie. Login записывается в auth.Login
 func (auth *AuthConfig) FillUserReturnCookie(incomeCookie *http.Cookie) (*http.Cookie, error) {
 	var (
 		resAuthToken string
@@ -71,6 +71,23 @@ func (auth *AuthConfig) FillUserReturnCookie(incomeCookie *http.Cookie) (*http.C
 	} else {
 		auth.Login = claims.Login
 	}
+	cookie := &http.Cookie{
+		Name:     auth.CookieName,
+		Value:    resAuthToken,
+		Expires:  time.Now().Add(auth.TokenExp),
+		HttpOnly: true,
+		Path:     "/",
+	}
+	return cookie, err
+}
+
+func (auth *AuthConfig) FillUserCookie(Login string) (*http.Cookie, error) {
+
+	resAuthToken, err := auth.BuildJWTString()
+	if err != nil {
+		return nil, err
+	}
+
 	cookie := &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    resAuthToken,

@@ -51,11 +51,8 @@ func (h *URLHandler) PostUserRegister(w http.ResponseWriter, r *http.Request) {
 			log.Println(pgErr)
 		}
 	}
-	cookieR, err := r.Cookie(h.Auth.CookieName)
-	if err != nil {
-		log.Print(err.Error())
-	}
-	cookieW, err := h.Auth.FillUserReturnCookie(cookieR)
+
+	cookieW, err := h.Auth.FillUserCookie(user.Login)
 	if err != nil {
 		log.Print(err.Error())
 	}
