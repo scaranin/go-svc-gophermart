@@ -53,8 +53,35 @@ func (repoPG *RepoDBPostgres) UserRegister(user models.User) error {
 	return err
 }
 
+// Аутентификация пользователя в БД.
+//
+// Проверяет наличие записи с указанными даннымы в БД.
+//
+// Входящие параметры: models.User (параметры Login - регистронезависимый, уникальный)
 func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
-	return nil
+	ctx := context.Background()
+
+	var count int
+	//err = pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM users").Scan(&count)
+
+	err := repoPG.PGXPool.QueryRow(ctx, `SELECT COUNT(1)
+		   FROM USERS
+		  WHERE name_user = @P_NAME_USER
+    		AND PASS_USER = @P_PASS_USER`,
+		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
+	).Scan(&count)
+
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return &pgconn.PgError{
+			Code:    "28000",
+			Message: "Wrong Username or Password",
+		}
+	}
+	return err
 }
 
 func (repoPG *RepoDBPostgres) UserOrderCreate(order string) error {
