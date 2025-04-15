@@ -29,19 +29,8 @@ func NewRepoDBPostgres() (RepoDBPostgres, error) {
 // Входящие параметры: models.User (параметры Login - регистронезависимый, уникальный)
 func (repoPG *RepoDBPostgres) UserRegister(user models.User) error {
 	ctx := context.Background()
-	_, err := repoPG.PGXPool.Exec(ctx, `INSERT 
-		   INTO USERS
-		      ( name_user
-    		  , pass_user
-    		  , created_at
-    		  , is_active
-		      ) 
-		 VALUES
-		      ( @P_NAME_USER
-    		  , @P_PASS_USER
-    		  , CURRENT_TIMESTAMP
-    		  , 1
-			  )`,
+	_, err := repoPG.PGXPool.Exec(ctx, `INSERT INTO USERS ( name_user, pass_user, created_at, is_active ) 
+		 VALUES ( @P_NAME_USER, @P_PASS_USER, CURRENT_TIMESTAMP, 1)`,
 		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
 	)
 
@@ -64,10 +53,7 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 	var count int
 	//err = pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM users").Scan(&count)
 
-	err := repoPG.PGXPool.QueryRow(ctx, `SELECT COUNT(1)
-		   FROM USERS
-		  WHERE name_user = @P_NAME_USER
-    		AND PASS_USER = @P_PASS_USER`,
+	err := repoPG.PGXPool.QueryRow(ctx, `SELECT COUNT(1) FROM USERS WHERE name_user = @P_NAME_USER AND PASS_USER = @P_PASS_USER`,
 		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
 	).Scan(&count)
 

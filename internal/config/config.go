@@ -17,7 +17,7 @@ type ConfigGM struct {
 }
 
 // Возвращает предзаполненную структуру по умолчанию
-func GetDefaultСonfigGM() ConfigGM {
+func GetDefaultConfigGM() ConfigGM {
 	return ConfigGM{
 		ServerURL: "localhost:8080",
 		DSN:       "postgres://postgres:admin@localhost:5432/postgres",
@@ -40,7 +40,7 @@ func NewConfig() (ConfigGM, error) {
 		return Cfg, err
 	}
 
-	defCfgGM := GetDefaultСonfigGM()
+	defCfgGM := GetDefaultConfigGM()
 
 	if flag.Lookup("a") == nil {
 		flag.StringVar(&defCfgGM.ServerURL, "a", "localhost:8080", "RUN_ADDRESS")

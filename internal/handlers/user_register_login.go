@@ -47,15 +47,19 @@ func (h *URLHandler) UserRegisterOrLogin(w http.ResponseWriter, r *http.Request,
 
 	pgErr, ok := registerOrLogin(user).(*pgconn.PgError)
 	if ok {
-		if pgErr.Code == pgerrcode.UniqueViolation {
+		switch pgErr.Code {
+		case pgerrcode.SuccessfulCompletion:
+			header = http.StatusOK
+			log.Print(pgErr)
+		case pgerrcode.UniqueViolation:
 			header = http.StatusConflict
-			log.Println(pgErr)
-		} else if pgErr.Code == pgerrcode.InvalidAuthorizationSpecification {
+			log.Print(pgErr)
+		case pgerrcode.InvalidAuthorizationSpecification:
 			header = http.StatusUnauthorized
-			log.Println(pgErr)
-		} else {
+			log.Print(pgErr)
+		default:
 			header = http.StatusInternalServerError
-			log.Println(pgErr)
+			log.Print(pgErr)
 		}
 	}
 
