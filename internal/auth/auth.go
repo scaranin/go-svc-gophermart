@@ -40,7 +40,7 @@ func (auth *AuthConfig) BuildJWTString() (string, error) {
 
 	authToken, err := token.SignedString([]byte(auth.SecretKey))
 	if err != nil {
-		return "", err
+		return authToken, err
 	}
 
 	return authToken, err

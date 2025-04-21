@@ -56,7 +56,7 @@ func main() {
 	}
 	var h handlers.URLHandler
 
-	h.Repo, err = repositories.NewRepository(cfg.DSN)
+	h.Repo, err = repositories.NewRepository(cfg)
 
 	h.Auth = auth.NewAuthConfig()
 

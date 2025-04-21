@@ -14,14 +14,17 @@ type ConfigGM struct {
 	DSN string `env:"DATABASE_URI"`
 	// Адрес системы расчёта начислений
 	ASAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
+	//
+	MigrationPath string `env:"MIGRATION_PATH"`
 }
 
 // Возвращает предзаполненную структуру по умолчанию
 func GetDefaultConfigGM() ConfigGM {
 	return ConfigGM{
-		ServerURL: "localhost:8080",
-		DSN:       "postgres://postgres:admin@localhost:5432/postgres",
-		ASAddress: "http://localhost:8080",
+		ServerURL:     "localhost:8080",
+		DSN:           "postgres://postgres:admin@localhost:5432/postgres",
+		ASAddress:     "http://localhost:8080",
+		MigrationPath: "./internal/migrations/postgres",
 	}
 
 }

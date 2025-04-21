@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/models"
 	"log"
 	"os"
@@ -95,17 +96,17 @@ func (repoPG *RepoDBPostgres) RequestOrderAccrual(balanceWD models.BalanceWithDr
 
 // Формирование репозитория DB Postgres
 //
-// Входные параметры: DSN string - строка подключения
-func NewRepository(DSN string) (GopherMart, error) {
+// Входные параметры: cft config.ConfigGM - конфигурация сервиса строка подключения
+func NewRepository(cfg config.ConfigGM) (GopherMart, error) {
 	var repoGM RepoDBPostgres
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, DSN)
+	pool, err := pgxpool.New(ctx, cfg.DSN)
 	if err != nil {
 		return &repoGM, err
 	}
 	repoGM.PGXPool = pool
 
-	err = repoGM.CreateDBScheme(ctx)
+	err = repoGM.CreateDBScheme(ctx, cfg.MigrationPath)
 
 	return &repoGM, err
 
@@ -115,14 +116,14 @@ func (repoPG *RepoDBPostgres) Close() {
 	repoPG.PGXPool.Close()
 }
 
-func (repoPG *RepoDBPostgres) CreateDBScheme(ctx context.Context) error {
+func (repoPG *RepoDBPostgres) CreateDBScheme(ctx context.Context, MigrationPath string) error {
 	conn, err := repoPG.PGXPool.Acquire(context.Background())
 	if err != nil {
 		return err
 	}
 	defer conn.Release()
 
-	migrationsDir := "./internal/migrations/postgres"
+	migrationsDir := MigrationPath
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return err
