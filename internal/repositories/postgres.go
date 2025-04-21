@@ -50,9 +50,7 @@ func (repoPG *RepoDBPostgres) UserRegister(user models.User) error {
 // Входящие параметры: models.User (параметры Login - регистронезависимый, уникальный)
 func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 	ctx := context.Background()
-
 	var count int
-	//err = pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM users").Scan(&count)
 
 	err := repoPG.PGXPool.QueryRow(ctx, `SELECT COUNT(1) FROM USERS WHERE name_user = @P_NAME_USER AND PASS_USER = @P_PASS_USER`,
 		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
@@ -71,21 +69,58 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 	return err
 }
 
-func (repoPG *RepoDBPostgres) UserOrderCreate(order string) error {
-	return nil
+// Загрузка номера заказа
+//
+// Проверяет наличие заказа с указанными даннымы в БД: текущий пользователь/другой пользователь
+// Добавляет заказ, если нет
+//
+// Входящие параметры: models.OrderShort
+func (repoPG *RepoDBPostgres) UserOrderCreate(User string, Order models.OrderShort) error {
+	ctx := context.Background()
+	var orderUser string
+
+	err := repoPG.PGXPool.QueryRow(ctx, `select name_user from users u join orders o on o.user_id = u.id_user where o.order_num = @P_ORDER_NUM`,
+		pgx.NamedArgs{"P_ORDER_NUM": Order},
+	).Scan(&orderUser)
+
+	if err != nil {
+		return err
+	}
+
+	if len(orderUser) == 0 {
+		_, err = repoPG.PGXPool.Exec(ctx, `INSERT INTO ORDERS ( order_num, user_id, total_amount, status, bonus_sum) 
+		select @P_ORDER_NUM, user_id, 0, 'CREATED', 0 from user where user_name = @P_USER_NAME`,
+			pgx.NamedArgs{"P_ORDER_NUM": Order, "P_USER_NAME": User},
+		)
+
+	} else {
+		if orderUser == User {
+			return &pgconn.PgError{
+				Code:    "-1",
+				Message: "The order has already been created by this user",
+			}
+		} else {
+			return &pgconn.PgError{
+				Code:    "-2",
+				Message: "The order has already been created by another user",
+			}
+		}
+	}
+
+	return err
 }
 
-func (repoPG *RepoDBPostgres) GetUserOrders() ([]models.Order, error) {
+func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error) {
 	var orders []models.Order
 	return orders, nil
 }
 
-func (repoPG *RepoDBPostgres) GetBalanceAccrual() (models.OrderAccrual, error) {
+func (repoPG *RepoDBPostgres) GetBalanceAccrual(User string) (models.OrderAccrual, error) {
 	var OrderAccrual models.OrderAccrual
 	return OrderAccrual, nil
 }
 
-func (repoPG *RepoDBPostgres) GetUserBalance() (models.Balance, error) {
+func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error) {
 	var Balnce models.Balance
 	return Balnce, nil
 }
@@ -105,7 +140,6 @@ func NewRepository(cfg config.ConfigGM) (GopherMart, error) {
 		return &repoGM, err
 	}
 	repoGM.PGXPool = pool
-
 	err = repoGM.CreateDBScheme(ctx, cfg.MigrationPath)
 
 	return &repoGM, err

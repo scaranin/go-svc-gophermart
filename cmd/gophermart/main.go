@@ -49,16 +49,19 @@ func StartServer(serverURL string, router *chi.Mux) error {
 }
 
 func main() {
-
 	cfg, err := config.NewConfig()
+
 	if err != nil {
 		log.Fatal(err)
 	}
 	var h handlers.URLHandler
 
 	h.Repo, err = repositories.NewRepository(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	h.Auth = auth.NewAuthConfig()
+	h.Auth = auth.NewAuthConfig(cfg.SecretKey)
 
 	if err != nil {
 		log.Fatal(err)

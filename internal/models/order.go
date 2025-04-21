@@ -2,6 +2,12 @@ package models
 
 import "time"
 
+// Базовая структура заказа
+type OrderShort struct {
+	User        string
+	OrderNumber string
+}
+
 // Структура JSON. Получение списка загруженных номеров заказов
 type Order struct {
 	Number     string    `json:"number"`

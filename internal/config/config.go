@@ -14,8 +14,10 @@ type ConfigGM struct {
 	DSN string `env:"DATABASE_URI"`
 	// Адрес системы расчёта начислений
 	ASAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
-	//
+	// Путь к миграциям БД
 	MigrationPath string `env:"MIGRATION_PATH"`
+	// Секретный ключ
+	SecretKey string `env:"TOKEN_SECRET_KEY"`
 }
 
 // Возвращает предзаполненную структуру по умолчанию
@@ -25,6 +27,7 @@ func GetDefaultConfigGM() ConfigGM {
 		DSN:           "postgres://postgres:admin@localhost:5432/postgres",
 		ASAddress:     "http://localhost:8080",
 		MigrationPath: "./internal/migrations/postgres",
+		SecretKey:     "TsoyZhiv",
 	}
 
 }
@@ -54,6 +57,12 @@ func NewConfig() (ConfigGM, error) {
 	if flag.Lookup("r") == nil {
 		flag.StringVar(&defCfgGM.ASAddress, "r", "http://localhost:8080", "ACCRUAL_SYSTEM_ADDRESS")
 	}
+	if flag.Lookup("m") == nil {
+		flag.StringVar(&defCfgGM.ASAddress, "m", "./internal/migrations/postgres", "MIGRATION_PATH")
+	}
+	if flag.Lookup("s") == nil {
+		flag.StringVar(&defCfgGM.ASAddress, "s", "TsoyZhiv", "TOKEN_SECRET_KEY")
+	}
 	flag.Parse()
 
 	if len(Cfg.ServerURL) == 0 {
@@ -66,6 +75,14 @@ func NewConfig() (ConfigGM, error) {
 
 	if len(Cfg.ASAddress) == 0 {
 		Cfg.ASAddress = defCfgGM.ASAddress
+	}
+
+	if len(Cfg.MigrationPath) == 0 {
+		Cfg.MigrationPath = defCfgGM.MigrationPath
+	}
+
+	if len(Cfg.SecretKey) == 0 {
+		Cfg.SecretKey = defCfgGM.SecretKey
 	}
 
 	return Cfg, err

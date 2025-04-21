@@ -19,10 +19,10 @@ type AuthConfig struct {
 	Login      string
 }
 
-func NewAuthConfig() AuthConfig {
+func NewAuthConfig(secretKey string) AuthConfig {
 	return AuthConfig{
 		CookieName: "auth_token",
-		SecretKey:  "TsoyZhiv",
+		SecretKey:  secretKey,
 		TokenExp:   time.Hour,
 	}
 }
