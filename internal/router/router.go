@@ -10,9 +10,14 @@ import (
 // Формирование Routes
 //
 // Входные параметры: h *handlers.URLHandler - структура с конфигурациями
-func NewRouter(h *handlers.URLHandler) *chi.Mux {
+func NewRouter(h *handlers.URLHandler, authConfig middlewares.AuthConfig) *chi.Mux {
 	mux := chi.NewRouter()
-	mux.Use(middlewares.WithLogging)
+	authService := middlewares.NewAuthService(authConfig.SecretKey)
+
+	// Создаем middleware
+	authMiddleware := middlewares.WithAuth(authService)
+
+	mux.Use(middlewares.WithLogging, authMiddleware)
 
 	mux.Route("/", func(mux chi.Router) {
 		mux.Post("/api/user/register", h.PostUserRegister)

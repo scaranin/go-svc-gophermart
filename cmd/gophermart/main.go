@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"go-svc-gophermart/internal/auth"
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/handlers"
+	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/repositories"
 	"go-svc-gophermart/internal/router"
 	"log"
@@ -61,14 +61,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h.Auth = auth.NewAuthConfig(cfg.SecretKey)
+	authConfig := middlewares.NewAuthConfig(cfg.SecretKey)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Up!")
 
-	router := router.NewRouter(&h)
+	router := router.NewRouter(&h, authConfig)
 	log.Println("Setup configuration!")
 
 	err = StartServer(cfg.ServerURL, router)

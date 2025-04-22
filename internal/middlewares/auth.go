@@ -1,15 +1,22 @@
 package middlewares
 
 import (
-	"errors"
+	"fmt"
+	"log"
+	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
+type AuthService interface {
+	GenerateToken(User string) (string, error)
+	ValidateToken(tokenString string) (string, error)
+}
+
 type Claims struct {
 	jwt.RegisteredClaims
-	Login string
+	User string
 }
 
 type AuthConfig struct {
@@ -18,26 +25,37 @@ type AuthConfig struct {
 	TokenExp   time.Duration
 }
 
+func NewAuthConfig(secretKey string) AuthConfig {
+	return AuthConfig{
+		CookieName: "auth_token",
+		SecretKey:  secretKey,
+		TokenExp:   time.Hour,
+	}
+}
+
 type AuthSvc struct {
 	Config AuthConfig
 }
 
-func NewAuthService(cfgAuth AuthConfig) AuthSvc {
-	return AuthSvc{Config: cfgAuth}
+func NewAuthService(SecretKey string) AuthSvc {
+	return AuthSvc{Config: AuthConfig{CookieName: "auth_token",
+		SecretKey: SecretKey,
+		TokenExp:  time.Hour}}
 }
 
 // Создаёт токен и возвращает его в виде строки
 //
 // Используем уникальное имя пользователя
-func (auth *AuthSvc) GenerateToken(login string) (string, error) {
+func (auth *AuthSvc) GenerateToken(User string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(auth.Config.TokenExp)),
 		},
-		Login: login,
+		User: User,
 	})
 
 	authToken, err := token.SignedString([]byte(auth.Config.SecretKey))
+	log.Println(authToken)
 	if err != nil {
 		return authToken, err
 	}
@@ -46,41 +64,51 @@ func (auth *AuthSvc) GenerateToken(login string) (string, error) {
 }
 
 // Проверяет токен на валидность
-func (auth *AuthSvc) ValidateToken(tokenString string) (*jwt.Token, error) {
-	return jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+func (auth *AuthSvc) ValidateToken(tokenString string) (string, error) {
+	claims := Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(auth.Config.TokenExp)),
+		},
+	}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("NotValid")
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header[auth.Config.CookieName])
 		}
-		return []byte(auth.Config.SecretKey), nil
+		return auth.Config.SecretKey, nil
 	})
+
+	if err != nil || !token.Valid {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	return claims.Subject, nil
 }
 
-/*
 func WithAuth(authService AuthSvc) func(h http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
-				RegisteredClaims: jwt.RegisteredClaims{
-					ExpiresAt: jwt.NewNumericDate(time.Now().Add(authService.Config.TokenExp)),
-				},
-				Login: au.Login,
-			})
-
-			authToken, err := token.SignedString([]byte(authService.Config.SecretKey))
+			// Получаем токен из cookies
+			cookie, err := r.Cookie("auth_token")
 			if err != nil {
-				return authToken, err
+				if err == http.ErrNoCookie {
+					next.ServeHTTP(w, r)
+					return
+				}
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
 			}
+			fmt.Println("cookie", cookie)
 
-			// Проверяем валидность токена
-			login, err := authService.ValidateToken(token)
+			// Проверяем токен с помощью сервиса авторизации
+			User, err := authService.ValidateToken(cookie.Value)
+			log.Println(User)
 			if err != nil {
-
-				w.WriteHeader(http.StatusUnauthorized)
+				http.Error(w, "Invalid token", http.StatusUnauthorized)
 				return
 			}
 
-			h.ServeHTTP(w, r)
+			// Добавляем userID в контекст запроса
+			next.ServeHTTP(w, r)
 		})
 	}
 }
-*/
