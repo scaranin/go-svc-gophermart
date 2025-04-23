@@ -14,8 +14,7 @@ func NewRouter(h *handlers.URLHandler, authConfig middlewares.AuthConfig) *chi.M
 	mux := chi.NewRouter()
 	authService := middlewares.NewAuthService(authConfig.SecretKey)
 
-	// Создаем middleware
-	authMiddleware := middlewares.WithAuth(authService)
+	authMiddleware := middlewares.WithAuth(&authService)
 
 	mux.Use(middlewares.WithLogging, authMiddleware)
 

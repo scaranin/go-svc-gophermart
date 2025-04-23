@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE TABLE users (
-    id_user SERIAL PRIMARY KEY,
+    user_id SERIAL PRIMARY KEY,
     name_user citext NOT NULL UNIQUE,
     pass_user VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

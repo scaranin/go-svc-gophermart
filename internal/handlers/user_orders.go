@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"go-svc-gophermart/internal/models"
+	"log"
 	"net/http"
 )
 
@@ -22,5 +24,9 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // - `422` — неверный формат номера заказа;
 // - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
+	err := h.Repo.UserOrderCreate(models.OrderShort{User: "user1", OrderNumber: "order1"})
+	if err != nil {
+		log.Println(err)
+	}
 	w.Write([]byte(h.GetCurrentMethodName()))
 }

@@ -10,7 +10,7 @@ type User interface {
 }
 
 type Order interface {
-	UserOrderCreate(User string, order models.OrderShort) error
+	UserOrderCreate(order models.OrderShort) error
 	GetUserOrders(User string) ([]models.Order, error)
 	GetBalanceAccrual(User string) (models.OrderAccrual, error)
 }

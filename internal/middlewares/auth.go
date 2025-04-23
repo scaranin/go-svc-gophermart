@@ -9,9 +9,17 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type AuthService interface {
+type TokenService interface {
 	GenerateToken(User string) (string, error)
+}
+
+type ValidateService interface {
 	ValidateToken(tokenString string) (string, error)
+}
+
+type AuthService interface {
+	TokenService
+	ValidateService
 }
 
 type Claims struct {
@@ -84,7 +92,7 @@ func (auth *AuthSvc) ValidateToken(tokenString string) (string, error) {
 	return claims.Subject, nil
 }
 
-func WithAuth(authService AuthSvc) func(h http.Handler) http.Handler {
+func WithAuth(authService AuthService) func(h http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Получаем токен из cookies

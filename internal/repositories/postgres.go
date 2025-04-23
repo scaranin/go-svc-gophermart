@@ -75,26 +75,26 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 // Добавляет заказ, если нет
 //
 // Входящие параметры: models.OrderShort
-func (repoPG *RepoDBPostgres) UserOrderCreate(User string, Order models.OrderShort) error {
+func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 	ctx := context.Background()
 	var orderUser string
 
-	err := repoPG.PGXPool.QueryRow(ctx, `select name_user from users u join orders o on o.user_id = u.id_user where o.order_num = @P_ORDER_NUM`,
-		pgx.NamedArgs{"P_ORDER_NUM": Order},
+	err := repoPG.PGXPool.QueryRow(ctx, `select coalesce(max(name_user), '-1') name_user from users u join orders o on o.user_id = u.user_id where o.order_num = @P_ORDER_NUM`,
+		pgx.NamedArgs{"P_ORDER_NUM": Order.OrderNumber},
 	).Scan(&orderUser)
 
 	if err != nil {
 		return err
 	}
 
-	if len(orderUser) == 0 {
+	if orderUser == "-1" {
 		_, err = repoPG.PGXPool.Exec(ctx, `INSERT INTO ORDERS ( order_num, user_id, total_amount, status, bonus_sum) 
-		select @P_ORDER_NUM, user_id, 0, 'CREATED', 0 from user where user_name = @P_USER_NAME`,
-			pgx.NamedArgs{"P_ORDER_NUM": Order, "P_USER_NAME": User},
+		select @P_ORDER_NUM, user_id, 0, 'CREATED', 0 from users where name_user = @P_USER_NAME`,
+			pgx.NamedArgs{"P_ORDER_NUM": Order.OrderNumber, "P_USER_NAME": Order.User},
 		)
 
 	} else {
-		if orderUser == User {
+		if orderUser == Order.User {
 			return &pgconn.PgError{
 				Code:    "-1",
 				Message: "The order has already been created by this user",
