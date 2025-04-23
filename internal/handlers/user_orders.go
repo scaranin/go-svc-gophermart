@@ -1,9 +1,14 @@
 package handlers
 
 import (
+	"bytes"
+	"fmt"
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
@@ -24,9 +29,66 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // - `422` — неверный формат номера заказа;
 // - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
-	err := h.Repo.UserOrderCreate(models.OrderShort{User: "user1", OrderNumber: "order1"})
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	user, err := h.TokenSvc.GetUserFromCookie(cookie)
 	if err != nil {
 		log.Println(err)
 	}
-	w.Write([]byte(h.GetCurrentMethodName()))
+	fmt.Print("user", user)
+
+	var buf bytes.Buffer
+	defer r.Body.Close()
+	_, err = buf.ReadFrom(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	orderNumber := string(buf.Bytes())
+	fmt.Print("orderNumber", orderNumber)
+
+	var header int
+	pgErr, ok := h.Repo.UserOrderCreate(models.OrderShort{User: user, OrderNumber: orderNumber}).(*pgconn.PgError)
+	/*
+	   	Code:    "-1",
+	   	Message: "The order has already been created by this user",
+	   }
+	   } else {
+	   return &pgconn.PgError{
+	   	Code:    "-2",
+	   	Message: "The order has already been created by another user",
+	*/
+	if ok {
+		switch pgErr.Code {
+		case pgerrcode.SuccessfulCompletion:
+			header = http.StatusAccepted
+			log.Print(pgErr)
+		case "-1":
+			header = http.StatusOK
+			log.Print(pgErr)
+		case "-2":
+			header = http.StatusConflict
+			log.Print(pgErr)
+		default:
+			header = http.StatusInternalServerError
+			log.Print(pgErr)
+		}
+	}
+
+	cookieW, err := h.TokenSvc.GenerateCookie(user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err != nil {
+		log.Print(err.Error())
+	}
+	http.SetCookie(w, cookieW)
+	if header == 0 {
+		header = http.StatusAccepted
+	}
+	w.WriteHeader(header)
 }

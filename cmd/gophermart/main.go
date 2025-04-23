@@ -61,6 +61,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	tokenSvc := middlewares.NewTokenService(cfg.SecretKey)
+	h.TokenSvc = &tokenSvc
+
 	authConfig := middlewares.NewAuthConfig(cfg.SecretKey)
 
 	if err != nil {

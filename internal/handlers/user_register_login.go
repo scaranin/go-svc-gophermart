@@ -3,11 +3,9 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -65,18 +63,9 @@ func (h *URLHandler) UserRegisterOrLogin(w http.ResponseWriter, r *http.Request,
 		}
 	}
 
-	authService := middlewares.NewAuthService("TsoyZhiv")
-	token, err := authService.GenerateToken(user.Login)
+	cookieW, err := h.TokenSvc.GenerateCookie(user.Login)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	cookieW := &http.Cookie{
-		Name:     "auth_token",
-		Value:    token,
-		Expires:  time.Now().Add(time.Hour),
-		HttpOnly: true,
-		Path:     "/",
 	}
 
 	if err != nil {
