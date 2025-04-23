@@ -47,20 +47,12 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	orderNumber := string(buf.Bytes())
+	orderNumber := buf.String()
 	fmt.Print("orderNumber", orderNumber)
 
 	var header int
 	pgErr, ok := h.Repo.UserOrderCreate(models.OrderShort{User: user, OrderNumber: orderNumber}).(*pgconn.PgError)
-	/*
-	   	Code:    "-1",
-	   	Message: "The order has already been created by this user",
-	   }
-	   } else {
-	   return &pgconn.PgError{
-	   	Code:    "-2",
-	   	Message: "The order has already been created by another user",
-	*/
+
 	if ok {
 		switch pgErr.Code {
 		case pgerrcode.SuccessfulCompletion:
