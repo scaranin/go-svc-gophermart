@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"go-svc-gophermart/internal/client"
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/models"
 	"log"
@@ -111,7 +113,24 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 }
 
 func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error) {
+	clientAccrual := client.NewAccrualClient("http://localhost:8081")
+	order, err := clientAccrual.GetOrder("6549842131")
+	fmt.Println("order ", order)
+	if err != nil {
+		fmt.Println("err  ", err)
+	}
 	var orders []models.Order
+	/*
+		ctx := context.Background()
+
+		err = repoPG.PGXPool.QueryRow(ctx, `select * from orders o where o.user_id = @P_USER_ID`,
+			pgx.NamedArgs{"P_USER_ID": User},
+		).Scan(&orders)
+
+		if err != nil {
+			return orders, err
+		}
+	*/
 	return orders, nil
 }
 

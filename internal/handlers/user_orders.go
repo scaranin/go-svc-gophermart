@@ -12,7 +12,25 @@ import (
 )
 
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
+//
+// Возможные коды ответа:
+//
+// - `200` — успешная обработка запроса.
+// - `204` — нет данных для ответа.
+// - `401` — пользователь не авторизован.
+// - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println("user ", user)
+	h.Repo.GetUserOrders(user)
 	w.Write([]byte(h.GetCurrentMethodName()))
 }
 
