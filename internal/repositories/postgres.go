@@ -112,9 +112,15 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 	return err
 }
 
-func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error) {
+// Получение списка заказов пользователя
+//
+// Возвращает список : текущий пользователь/другой пользователь
+// Добавляет заказ, если нет
+//
+// Входящие параметры: models.OrderShort
+func (repoPG *RepoDBPostgres) GetUserOrders(User string, StatusList []string) ([]models.Order, error) {
 	clientAccrual := client.NewAccrualClient("http://localhost:8081")
-	order, err := clientAccrual.GetOrder("6549842131")
+	order, err := clientAccrual.GetOrder("12345678902")
 	fmt.Println("order ", order)
 	if err != nil {
 		fmt.Println("err  ", err)
@@ -193,7 +199,10 @@ func (repoPG *RepoDBPostgres) CreateDBScheme(ctx context.Context, MigrationPath 
 			}
 
 			_, err = repoPG.PGXPool.Exec(ctx, string(sqlBytes))
-			if err != nil {
+
+			pgErr, ok := err.(*pgconn.PgError)
+
+			if ok && pgErr.Code != pgerrcode.DuplicateTable {
 				log.Println("Ошибка миграции: ", err.Error())
 				continue
 			}

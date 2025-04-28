@@ -8,11 +8,13 @@ import (
 	"net/http"
 )
 
+// Клиент сервиса бонусного счета
 type AccrualClient struct {
 	baseURL string
 	client  *http.Client
 }
 
+// Инициализация клиента сервиса бонусного счета
 func NewAccrualClient(baseURL string) *AccrualClient {
 	return &AccrualClient{
 		baseURL: baseURL,
@@ -20,6 +22,7 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 	}
 }
 
+// Получение информации о расчёте начислений баллов лояльности по заказу
 func (accrual *AccrualClient) GetOrder(orderNum string) (*models.OrderAccrual, error) {
 	log.Println("GetOrder")
 	resp, err := accrual.client.Get(fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum))

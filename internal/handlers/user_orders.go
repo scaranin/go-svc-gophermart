@@ -30,7 +30,9 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 	fmt.Println("user ", user)
-	h.Repo.GetUserOrders(user)
+
+	// Получаем список заказов пользователя не в конечном статусе и обновляем данные в БД
+	h.Repo.GetUserOrders(user, []string{"INVALID", "PROCESSED"})
 	w.Write([]byte(h.GetCurrentMethodName()))
 }
 
