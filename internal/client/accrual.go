@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"go-svc-gophermart/internal/models"
@@ -30,8 +31,11 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 // Получение информации о расчёте начислений баллов лояльности по заказу
 func (accrual *AccrualClient) GetOrder(orderNum string) ([]models.OrderAccrual, error) {
 	log.Println("GetOrder")
-	accrual.client.Timeout = time.Second * 15
-	resp, err := accrual.client.Get(fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum), nil)
+	resp, err := accrual.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
