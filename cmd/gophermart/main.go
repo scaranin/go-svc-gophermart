@@ -66,7 +66,9 @@ func main() {
 	h.TokenSvc = &tokenSvc
 	log.Println("AccrualServiceAddress ", cfg.ASAddress)
 	accrualSvc := client.NewAccrualClient(cfg.ASAddress)
+	accrualSvc.Repo = h.Repo
 	h.AccrualSvc = accrualSvc
+	accrualSvc.RunTickerWithContext()
 
 	authConfig := middlewares.NewAuthConfig(cfg.SecretKey)
 

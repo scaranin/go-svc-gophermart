@@ -12,6 +12,7 @@ type User interface {
 type Order interface {
 	UserOrderCreate(order models.OrderShort) error
 	GetAccruals(User string) ([]models.OrderAccrual, error)
+	GetAccrualsFull() ([]models.OrderAccrual, error)
 	UpdateOrderList(OrderAccrualArr []models.OrderAccrual) error
 	GetUserOrders(User string) ([]models.Order, error)
 }

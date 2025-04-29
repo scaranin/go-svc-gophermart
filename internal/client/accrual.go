@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go-svc-gophermart/internal/models"
+	"go-svc-gophermart/internal/repositories"
 	"log"
 	"net/http"
 	"time"
@@ -19,6 +20,7 @@ type AccrualService interface {
 type AccrualClient struct {
 	baseURL string
 	client  *http.Client
+	Repo    repositories.GopherMart
 }
 
 // Инициализация клиента сервиса бонусного счета
@@ -57,4 +59,35 @@ func (accrual *AccrualClient) GetOrder(orderNum string) (models.OrderAccrual, er
 	}
 
 	return order, nil
+}
+
+func (accrual *AccrualClient) RunTickerWithContext() error {
+	ctx := context.Background()
+	go func() {
+		ticker := time.NewTicker(time.Second * 5)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				log.Println("RunTickerWithContext stopped!")
+				return
+			case <-ticker.C:
+				OrderAccrualList, err := accrual.Repo.GetAccrualsFull()
+				if err != nil {
+					log.Println(err)
+				}
+				var OrderList []models.OrderAccrual
+				for _, OrderAccrualItem := range OrderAccrualList {
+					Order, err := accrual.GetOrder(OrderAccrualItem.Order)
+					if err != nil {
+						log.Println(err)
+					}
+					OrderList = append(OrderList, Order)
+				}
+				accrual.Repo.UpdateOrderList(OrderList)
+			}
+		}
+	}()
+	return nil
 }

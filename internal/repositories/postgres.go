@@ -110,6 +110,45 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 	return err
 }
 
+// # Получение всех заказов не в конечных статусах
+//
+// Отбирает заказы для отправки запроса в сервис Accrual
+func (repoPG *RepoDBPostgres) GetAccrualsFull() ([]models.OrderAccrual, error) {
+	ctx := context.Background()
+	var (
+		err              error
+		orderAccrualList []models.OrderAccrual
+		orderAccrealItem models.OrderAccrual
+	)
+	sqlGetOrderList :=
+		`select o.order_num
+    from orders o
+    join users  u on u.user_id = o.user_id
+    join status_info si on si.status = o.status
+   where CAST(NOW() AS DATE) between si.date_start
+                                 and si.date_end
+     and si.is_active = 1
+     and si.is_final  = 0`
+
+	rows, err := repoPG.PGXPool.Query(ctx, sqlGetOrderList)
+	if err != nil {
+		log.Println(err)
+		return orderAccrualList, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&orderAccrealItem.Order)
+		if err != nil {
+			log.Println(err)
+		}
+		orderAccrualList = append(orderAccrualList, orderAccrealItem)
+
+	}
+
+	return orderAccrualList, err
+}
+
 // # Получение списка заказов пользователя не в конечных статусах
 //
 // # Отбирает заказы пользователя в статусе отличном от конечного
