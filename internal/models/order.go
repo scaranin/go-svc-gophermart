@@ -18,7 +18,7 @@ type Order struct {
 
 // Структура JSON. Получение информации о расчёте начислений баллов лояльности
 type OrderAccrual struct {
-	Order   string `json:"order"`
-	Status  string `json:"status"`
-	Accrual int    `json:"accrual"`
+	Order   string  `json:"order"`
+	Status  string  `json:"status"`
+	Accrual float64 `json:"accrual"`
 }
