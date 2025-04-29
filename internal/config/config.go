@@ -58,10 +58,10 @@ func NewConfig() (ConfigGM, error) {
 		flag.StringVar(&defCfgGM.ASAddress, "r", "http://localhost:8081", "ACCRUAL_SYSTEM_ADDRESS")
 	}
 	if flag.Lookup("m") == nil {
-		flag.StringVar(&defCfgGM.ASAddress, "m", "./internal/migrations/postgres", "MIGRATION_PATH")
+		flag.StringVar(&defCfgGM.MigrationPath, "m", "./internal/migrations/postgres", "MIGRATION_PATH")
 	}
 	if flag.Lookup("s") == nil {
-		flag.StringVar(&defCfgGM.ASAddress, "s", "TsoyZhiv", "TOKEN_SECRET_KEY")
+		flag.StringVar(&defCfgGM.SecretKey, "s", "TsoyZhiv", "TOKEN_SECRET_KEY")
 	}
 	flag.Parse()
 

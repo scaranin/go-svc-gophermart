@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go-svc-gophermart/internal/models"
 	"log"
@@ -11,7 +12,7 @@ import (
 )
 
 type AccrualService interface {
-	GetOrder(orderNum string) ([]models.OrderAccrual, error)
+	GetOrder(orderNum string) (models.OrderAccrual, error)
 }
 
 // Клиент сервиса бонусного счета
@@ -29,26 +30,30 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 }
 
 // Получение информации о расчёте начислений баллов лояльности по заказу
-func (accrual *AccrualClient) GetOrder(orderNum string) ([]models.OrderAccrual, error) {
+func (accrual *AccrualClient) GetOrder(orderNum string) (models.OrderAccrual, error) {
 	log.Println("GetOrder")
-
+	var order models.OrderAccrual
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum), nil)
+	if err != nil {
+		log.Println(err)
+		return order, err
+	}
 	resp, err := accrual.client.Do(req)
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return order, err
 	}
 	defer resp.Body.Close()
 
 	log.Println("resp.StatusCode ", resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HttpStatus: %s", resp.Status)
+		return order, errors.New(resp.Status)
 	}
 
-	var order []models.OrderAccrual
 	if err := json.NewDecoder(resp.Body).Decode(&order); err != nil {
-		return nil, err
+		return order, err
 	}
 
 	return order, nil

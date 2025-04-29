@@ -34,16 +34,31 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("user ", user)
 
 	// Получаем список заказов пользователя не в конечном статусе
-	OrderAccrual, err := h.Repo.GetAccruals(user)
+	OrderAccrualList, err := h.Repo.GetAccruals(user)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	// Обновляем
-	if err = h.Repo.UpdateOrderList(OrderAccrual); err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+	fmt.Println("OrderAccrual ", OrderAccrualList)
+	var OrderList []models.OrderAccrual
+	for _, OrderItem := range OrderAccrualList {
+		Order, err := h.AccrualSvc.GetOrder(OrderItem.Order)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		OrderList = append(OrderList, Order)
+
 	}
+	// Обновляем
+	if len(OrderList) != 0 {
+		if err = h.Repo.UpdateOrderList(OrderList); err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+
+	// Получаем заказы с актуальным статусом
 	Orders, err := h.Repo.GetUserOrders(user)
 	if err != nil {
 		log.Println(err)
