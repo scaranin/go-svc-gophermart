@@ -64,7 +64,7 @@ func main() {
 
 	tokenSvc := middlewares.NewTokenService(cfg.SecretKey)
 	h.TokenSvc = &tokenSvc
-
+	log.Println("AccrualServiceAddress ", cfg.ASAddress)
 	accrualSvc := client.NewAccrualClient(cfg.ASAddress)
 	h.AccrualSvc = accrualSvc
 
