@@ -22,6 +22,7 @@ import (
 // - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("auth_token")
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -50,6 +51,10 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookieW, err := h.TokenSvc.GenerateCookie(user)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
 	OrdersJSON, err := json.Marshal(Orders)
 	if err != nil {
 		log.Println(err)
