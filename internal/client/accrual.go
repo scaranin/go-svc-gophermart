@@ -6,6 +6,7 @@ import (
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
+	"time"
 )
 
 type AccrualService interface {
@@ -29,6 +30,7 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 // Получение информации о расчёте начислений баллов лояльности по заказу
 func (accrual *AccrualClient) GetOrder(orderNum string) ([]models.OrderAccrual, error) {
 	log.Println("GetOrder")
+	accrual.client.Timeout = time.Second * 15
 	resp, err := accrual.client.Get(fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum))
 	if err != nil {
 		return nil, err
