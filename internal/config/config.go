@@ -25,7 +25,7 @@ func GetDefaultConfigGM() ConfigGM {
 	return ConfigGM{
 		ServerURL:     "localhost:8080",
 		DSN:           "postgres://postgres:admin@localhost:5432/postgres",
-		ASAddress:     "http://localhost:8080",
+		ASAddress:     "http://localhost:8081",
 		MigrationPath: "./internal/migrations/postgres",
 		SecretKey:     "TsoyZhiv",
 	}
@@ -55,7 +55,7 @@ func NewConfig() (ConfigGM, error) {
 		flag.StringVar(&defCfgGM.DSN, "d", "postgres://postgres:admin@localhost:5432/postgres", "DATABASE_URI")
 	}
 	if flag.Lookup("r") == nil {
-		flag.StringVar(&defCfgGM.ASAddress, "r", "http://localhost:8080", "ACCRUAL_SYSTEM_ADDRESS")
+		flag.StringVar(&defCfgGM.ASAddress, "r", "http://localhost:8081", "ACCRUAL_SYSTEM_ADDRESS")
 	}
 	if flag.Lookup("m") == nil {
 		flag.StringVar(&defCfgGM.ASAddress, "m", "./internal/migrations/postgres", "MIGRATION_PATH")

@@ -8,6 +8,10 @@ import (
 	"net/http"
 )
 
+type AccrualService interface {
+	GetOrder(orderNum string) ([]models.OrderAccrual, error)
+}
+
 // Клиент сервиса бонусного счета
 type AccrualClient struct {
 	baseURL string

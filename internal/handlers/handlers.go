@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"go-svc-gophermart/internal/client"
 	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/repositories"
 	"runtime"
@@ -8,8 +9,9 @@ import (
 
 // Основная структура со списком обработчиков
 type URLHandler struct {
-	Repo     repositories.GopherMart
-	TokenSvc middlewares.TokenService
+	Repo       repositories.GopherMart
+	TokenSvc   middlewares.TokenService
+	AccrualSvc client.AccrualService
 }
 
 // Функция для получения имени текущего метода

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"go-svc-gophermart/internal/models"
 	"log"
@@ -31,9 +32,35 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("user ", user)
 
-	// Получаем список заказов пользователя не в конечном статусе и обновляем данные в БД
-	h.Repo.GetUserOrders(user)
-	w.Write([]byte(h.GetCurrentMethodName()))
+	// Получаем список заказов пользователя не в конечном статусе
+	OrderAccrual, err := h.Repo.GetAccruals(user)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	// Обновляем
+	if err = h.Repo.UpdateOrderList(OrderAccrual); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	Orders, err := h.Repo.GetUserOrders(user)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	cookieW, err := h.TokenSvc.GenerateCookie(user)
+	OrdersJSON, err := json.Marshal(Orders)
+	if err != nil {
+		log.Println(err)
+		http.SetCookie(w, cookieW)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	http.SetCookie(w, cookieW)
+	w.WriteHeader(http.StatusOK)
+	w.Write(OrdersJSON)
 }
 
 // Загрузка пользователем номера заказа для расчёта

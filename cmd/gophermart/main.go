@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"go-svc-gophermart/internal/client"
 	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/handlers"
 	"go-svc-gophermart/internal/middlewares"
@@ -63,6 +64,9 @@ func main() {
 
 	tokenSvc := middlewares.NewTokenService(cfg.SecretKey)
 	h.TokenSvc = &tokenSvc
+
+	accrualSvc := client.NewAccrualClient(cfg.ASAddress)
+	h.AccrualSvc = accrualSvc
 
 	authConfig := middlewares.NewAuthConfig(cfg.SecretKey)
 
