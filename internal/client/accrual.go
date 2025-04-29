@@ -23,7 +23,7 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 }
 
 // Получение информации о расчёте начислений баллов лояльности по заказу
-func (accrual *AccrualClient) GetOrder(orderNum string) (*models.OrderAccrual, error) {
+func (accrual *AccrualClient) GetOrder(orderNum string) ([]models.OrderAccrual, error) {
 	log.Println("GetOrder")
 	resp, err := accrual.client.Get(fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum))
 	if err != nil {
@@ -36,10 +36,10 @@ func (accrual *AccrualClient) GetOrder(orderNum string) (*models.OrderAccrual, e
 		return nil, fmt.Errorf("HttpStatus: %s", resp.Status)
 	}
 
-	var order models.OrderAccrual
+	var order []models.OrderAccrual
 	if err := json.NewDecoder(resp.Body).Decode(&order); err != nil {
 		return nil, err
 	}
 
-	return &order, nil
+	return order, nil
 }
