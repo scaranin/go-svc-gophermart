@@ -89,7 +89,7 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 
 	if orderUser == "-1" {
 		_, err = repoPG.PGXPool.Exec(ctx, `INSERT INTO ORDERS ( order_num, user_id, total_amount, status, accrual) 
-		select @P_ORDER_NUM, user_id, 0, 'REGISTERED', 0 from users where name_user = @P_USER_NAME`,
+		select @P_ORDER_NUM, user_id, 0, 'NEW', 0 from users where name_user = @P_USER_NAME`,
 			pgx.NamedArgs{"P_ORDER_NUM": Order.OrderNumber, "P_USER_NAME": Order.User},
 		)
 

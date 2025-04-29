@@ -11,7 +11,7 @@ CREATE TABLE status_info (
 insert 
   into status_info
 values 
-     ( 'REGISTERED'
+     ( 'NEW'
      , '0001-01-01'
      , '9999-12-31'
      , 1
