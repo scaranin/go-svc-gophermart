@@ -7,10 +7,35 @@ import (
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
+	"unicode"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// Проверка номера договора алгоритмом Луна
+func validateLuhn(orderNumber string) bool {
+	for _, r := range orderNumber {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	sum := 0
+	for i, rune := range orderNumber {
+		digit := int(rune)
+		if (len(orderNumber)-i)%2 == 0 {
+			digit *= 2
+
+			if digit > 9 {
+				digit -= 9
+			}
+		}
+		sum += digit
+	}
+
+	return sum%10 == 0
+}
 
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
 //
@@ -96,6 +121,12 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // - `422` — неверный формат номера заказа;
 // - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
+	var (
+		buf    bytes.Buffer
+		header int
+		pgErr  *pgconn.PgError
+		ok     bool
+	)
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -107,7 +138,6 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Print("user", user)
 
-	var buf bytes.Buffer
 	defer r.Body.Close()
 	_, err = buf.ReadFrom(r.Body)
 	if err != nil {
@@ -117,8 +147,12 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 	orderNumber := buf.String()
 	fmt.Print("orderNumber", orderNumber)
 
-	var header int
-	pgErr, ok := h.Repo.UserOrderCreate(models.OrderShort{User: user, OrderNumber: orderNumber}).(*pgconn.PgError)
+	if !validateLuhn(orderNumber) {
+		pgErr, ok = h.Repo.UserOrderCreate(models.OrderShort{User: user, OrderNumber: orderNumber}).(*pgconn.PgError)
+	} else {
+		header = http.StatusUnprocessableEntity
+		log.Print("Bad order number")
+	}
 
 	if ok {
 		switch pgErr.Code {
