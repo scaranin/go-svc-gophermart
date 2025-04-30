@@ -301,8 +301,8 @@ func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error
 	ctx := context.Background()
 	var Balnce models.Balance
 
-	SQLSelectBalance := `select ( select sum(accrual) from ORDERS O where O.user_id = U.user_id )   accrual
-	                          , ( select sum(amount) from WITHDRAWS W where W.user_id = U.user_id ) withdraw
+	SQLSelectBalance := `select ( select coalesce(sum(accrual), 0) from ORDERS O where O.user_id = U.user_id )   accrual
+	                          , ( select coalesce(sum(amount), 0) from WITHDRAWS W where W.user_id = U.user_id ) withdraw
 	                       from USERS U 
 				          where U.name_user = @P_USER_NAME`
 
