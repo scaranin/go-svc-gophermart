@@ -19,7 +19,8 @@ type Order interface {
 
 type Balance interface {
 	GetUserBalance(User string) (models.Balance, error)
-	RequestOrderAccrual(models.BalanceWithDraw) error
+	RequestOrderAccrual(User string, WithDraw models.RequestWithDraw) error
+	GetUserWithdrawAll(User string) ([]models.WithDrawalsList, error)
 }
 
 type GopherMart interface {

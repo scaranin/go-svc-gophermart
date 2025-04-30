@@ -5,6 +5,7 @@ import (
 	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/repositories"
 	"runtime"
+	"unicode"
 )
 
 // Основная структура со списком обработчиков
@@ -29,4 +30,28 @@ func (h URLHandler) GetCurrentMethodName() string {
 	fullName := fn.Name()
 
 	return fullName
+}
+
+// Проверка номера договора алгоритмом Луна
+func validateLuhn(orderNumber string) bool {
+	for _, r := range orderNumber {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	sum := 0
+	for i, rune := range orderNumber {
+		digit := int(rune)
+		if (len(orderNumber)-i)%2 == 0 {
+			digit *= 2
+
+			if digit > 9 {
+				digit -= 9
+			}
+		}
+		sum += digit
+	}
+
+	return sum%10 == 0
 }

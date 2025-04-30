@@ -7,35 +7,10 @@ import (
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
-	"unicode"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 )
-
-// Проверка номера договора алгоритмом Луна
-func validateLuhn(orderNumber string) bool {
-	for _, r := range orderNumber {
-		if !unicode.IsDigit(r) {
-			return false
-		}
-	}
-
-	sum := 0
-	for i, rune := range orderNumber {
-		digit := int(rune)
-		if (len(orderNumber)-i)%2 == 0 {
-			digit *= 2
-
-			if digit > 9 {
-				digit -= 9
-			}
-		}
-		sum += digit
-	}
-
-	return sum%10 == 0
-}
 
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
 //
@@ -95,15 +70,16 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 	}
+	http.SetCookie(w, cookieW)
+
 	OrdersJSON, err := json.Marshal(Orders)
 	if err != nil {
 		log.Println(err)
-		http.SetCookie(w, cookieW)
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	http.SetCookie(w, cookieW)
 	w.WriteHeader(http.StatusOK)
 	w.Write(OrdersJSON)
 }

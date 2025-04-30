@@ -1,4 +1,4 @@
-CREATE TABLE status_info (
+CREATE TABLE status_order_info (
     status VARCHAR(20) PRIMARY KEY,
     date_start DATE,
     date_end DATE,
@@ -9,7 +9,7 @@ CREATE TABLE status_info (
 );
 
 insert 
-  into status_info
+  into status_order_info
 values 
      ( 'NEW'
      , '0001-01-01'
@@ -21,7 +21,7 @@ values
      ) ;
 
 insert 
-  into status_info
+  into status_order_info
 values 
      ( 'INVALID'
      , '0001-01-01'
@@ -33,7 +33,7 @@ values
      ) ;
 
 insert 
-  into status_info
+  into status_order_info
 values 
      ( 'PROCESSING'
      , '0001-01-01'
@@ -45,7 +45,7 @@ values
      ) ;
 
 insert 
-  into status_info
+  into status_order_info
 values 
      ( 'PROCESSED'
      , '0001-01-01'

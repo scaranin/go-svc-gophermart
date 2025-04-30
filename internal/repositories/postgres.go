@@ -30,8 +30,12 @@ func NewRepoDBPostgres() (RepoDBPostgres, error) {
 // Входные параметры: models.User (параметры Login - регистронезависимый, уникальный)
 func (repoPG *RepoDBPostgres) UserRegister(user models.User) error {
 	ctx := context.Background()
-	_, err := repoPG.PGXPool.Exec(ctx, `INSERT INTO USERS ( name_user, pass_user, created_at, is_active ) 
-		 VALUES ( @P_NAME_USER, @P_PASS_USER, CURRENT_TIMESTAMP, 1)`,
+
+	SQLUserInsert := `insert 
+	                    into USERS ( name_user, pass_user, created_at, is_active ) 
+		              values ( @P_NAME_USER, @P_PASS_USER, CURRENT_TIMESTAMP, 1)`
+
+	_, err := repoPG.PGXPool.Exec(ctx, SQLUserInsert,
 		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
 	)
 
@@ -52,7 +56,12 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 	ctx := context.Background()
 	var count int
 
-	err := repoPG.PGXPool.QueryRow(ctx, `SELECT COUNT(1) FROM USERS WHERE name_user = @P_NAME_USER AND PASS_USER = @P_PASS_USER`,
+	SQLExists := `select count(1) 
+	                form USERS 
+				   where name_user = @P_NAME_USER 
+				     and pass_user = @P_PASS_USER`
+
+	err := repoPG.PGXPool.QueryRow(ctx, SQLExists,
 		pgx.NamedArgs{"P_NAME_USER": user.Login, "P_PASS_USER": user.Password},
 	).Scan(&count)
 
@@ -79,7 +88,12 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 	ctx := context.Background()
 	var orderUser string
 
-	err := repoPG.PGXPool.QueryRow(ctx, `select coalesce(max(name_user), '-1') name_user from users u join orders o on o.user_id = u.user_id where o.order_num = @P_ORDER_NUM`,
+	SQLExists := `select coalesce(max(U.name_user), '-1') name_user 
+	                from USERS  U 
+				    join ORDERS O on O.user_id = U.user_id 
+				   where O.order_num = @P_ORDER_NUM`
+
+	err := repoPG.PGXPool.QueryRow(ctx, SQLExists,
 		pgx.NamedArgs{"P_ORDER_NUM": Order.OrderNumber},
 	).Scan(&orderUser)
 
@@ -87,9 +101,18 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 		return err
 	}
 
+	SQLInsertOrder := `insert 
+	                     into ORDERS ( order_num, user_id, total_amount, status, accrual) 
+		               select @P_ORDER_NUM
+					        , user_id
+							, 0
+							, 'NEW'
+							, 0 
+						 from users 
+						where name_user = @P_USER_NAME`
+
 	if orderUser == "-1" {
-		_, err = repoPG.PGXPool.Exec(ctx, `INSERT INTO ORDERS ( order_num, user_id, total_amount, status, accrual) 
-		select @P_ORDER_NUM, user_id, 0, 'NEW', 0 from users where name_user = @P_USER_NAME`,
+		_, err = repoPG.PGXPool.Exec(ctx, SQLInsertOrder,
 			pgx.NamedArgs{"P_ORDER_NUM": Order.OrderNumber, "P_USER_NAME": Order.User},
 		)
 
@@ -120,17 +143,17 @@ func (repoPG *RepoDBPostgres) GetAccrualsFull() ([]models.OrderAccrual, error) {
 		orderAccrualList []models.OrderAccrual
 		orderAccrealItem models.OrderAccrual
 	)
-	sqlGetOrderList :=
-		`select o.order_num
-    from orders o
-    join users  u on u.user_id = o.user_id
-    join status_info si on si.status = o.status
-   where CAST(NOW() AS DATE) between si.date_start
-                                 and si.date_end
-     and si.is_active = 1
-     and si.is_final  = 0`
+	SQLGetOrderList :=
+		`select O.order_num
+           from ORDERS             O
+           join USERS              U on U.user_id = O.user_id
+           join STATUS_ORDER_INFO SI on SI.status = O.status
+          where CAST(NOW() AS DATE) between SI.date_start
+                                        and SI.date_end
+            and SI.is_active = 1
+            and SI.is_final  = 0`
 
-	rows, err := repoPG.PGXPool.Query(ctx, sqlGetOrderList)
+	rows, err := repoPG.PGXPool.Query(ctx, SQLGetOrderList)
 	if err != nil {
 		log.Println(err)
 		return orderAccrualList, err
@@ -151,7 +174,7 @@ func (repoPG *RepoDBPostgres) GetAccrualsFull() ([]models.OrderAccrual, error) {
 
 // # Получение списка заказов пользователя не в конечных статусах
 //
-// # Отбирает заказы пользователя в статусе отличном от конечного
+//	Отбирает заказы пользователя в статусе отличном от конечного
 //
 // Входные параметры: User
 func (repoPG *RepoDBPostgres) GetAccruals(User string) ([]models.OrderAccrual, error) {
@@ -161,18 +184,19 @@ func (repoPG *RepoDBPostgres) GetAccruals(User string) ([]models.OrderAccrual, e
 		orderAccrualList []models.OrderAccrual
 		orderAccrealItem models.OrderAccrual
 	)
-	sqlGetOrderList :=
-		`select o.order_num
-    from orders o
-    join users  u on u.user_id = o.user_id
-    join status_info si on si.status = o.status
-   where CAST(NOW() AS DATE) between si.date_start
-                                 and si.date_end
-     and si.is_active = 1
-     and si.is_final  = 0
-     and u.name_user = @P_USER_NAME`
 
-	rows, err := repoPG.PGXPool.Query(ctx, sqlGetOrderList, pgx.NamedArgs{"P_USER_NAME": User})
+	SQLGetOrderList :=
+		`select O.order_num
+           from ORDERS             O
+           join USERS              U on U.user_id = O.user_id
+           join STATUS_ORDER_INFO SI on SI.status = O.status
+          where CAST(NOW() AS DATE) between SI.date_start
+                                        and SI.date_end
+            and SI.is_active = 1
+            and SI.is_final  = 0
+            and U.name_user  = @P_USER_NAME`
+
+	rows, err := repoPG.PGXPool.Query(ctx, SQLGetOrderList, pgx.NamedArgs{"P_USER_NAME": User})
 	if err != nil {
 		log.Println(err)
 		return orderAccrualList, err
@@ -189,6 +213,7 @@ func (repoPG *RepoDBPostgres) GetAccruals(User string) ([]models.OrderAccrual, e
 	}
 
 	return orderAccrualList, err
+
 }
 
 func (repoPG *RepoDBPostgres) UpdateOrderList(OrderAccrualArr []models.OrderAccrual) error {
@@ -198,7 +223,14 @@ func (repoPG *RepoDBPostgres) UpdateOrderList(OrderAccrualArr []models.OrderAccr
 		return err
 	}
 	defer tx.Rollback(ctx)
-	_, err = tx.Prepare(ctx, "UploadAccrual", "UPDATE ORDERS set status = $1, accrual = $2, updated_at = current_timestamp where order_num = $3")
+
+	SQLUpdateOrder := `update ORDERS 
+	                      set status     = $1
+						    , accrual    = $2
+							, updated_at = current_timestamp 
+						where order_num = $3`
+
+	_, err = tx.Prepare(ctx, "UploadAccrual", SQLUpdateOrder)
 	if err != nil {
 		return err
 	}
@@ -215,7 +247,7 @@ func (repoPG *RepoDBPostgres) UpdateOrderList(OrderAccrualArr []models.OrderAccr
 
 // # Получение списка заказов пользователя
 //
-// Возвращает список заказов: текущий пользователь/другой пользователь
+//	Возвращает список заказов: текущий пользователь/другой пользователь
 //
 // Входные параметры: User
 // Выходные параметры: []models.Order
@@ -224,7 +256,14 @@ func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error)
 	var order models.Order
 	ctx := context.Background()
 
-	sqlGetOrderList := `select o.order_num, o.status, o.accrual, o.updated_at from orders o join users u on u.user_id = o.user_id where u.name_user = @P_USER_NAME`
+	sqlGetOrderList := `select O.order_num
+	                         , O.status
+							 , O.accrual
+							 , O.updated_at 
+						  from ORDERS O
+						  join USERS  U on U.user_id = O.user_id 
+						 where U.name_user = @P_USER_NAME`
+
 	var err error
 	rows, err := repoPG.PGXPool.Query(ctx, sqlGetOrderList, pgx.NamedArgs{"P_USER_NAME": User})
 	if err != nil {
@@ -250,21 +289,87 @@ func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error)
 
 // # Получение списка заказов пользователя. Внешний сервис
 //
-// # Возвращает список заказов пользователя влючая статус и начисленные баллы
+//	Возвращает список заказов пользователя влючая статус и начисленные баллы
 //
 // Входные параметры: User
-func (repoPG *RepoDBPostgres) GetBalanceAccrual(User string) (models.OrderAccrual, error) {
-	var OrderAccrual models.OrderAccrual
-	return OrderAccrual, nil
+func (repoPG *RepoDBPostgres) GetBalanceAccrual(User string) ([]models.OrderAccrual, error) {
+	var OrderAccrualList []models.OrderAccrual
+	return OrderAccrualList, nil
 }
 
 func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error) {
+	ctx := context.Background()
 	var Balnce models.Balance
-	return Balnce, nil
+
+	SQLSelectBalance := `select ( select sum(accrual) from ORDERS O where O.user_id = U.user_id )   accrual
+	                          , ( select sum(amount) from WITHDRAWS W where W.user_id = U.user_id ) withdraw
+	                       from USERS U 
+				          where U.user_name = @P_USER_NAME`
+
+	err := repoPG.PGXPool.QueryRow(ctx, SQLSelectBalance,
+		pgx.NamedArgs{"P_USER_NAME": User},
+	).Scan(&Balnce.Current, &Balnce.WithDrawn)
+
+	return Balnce, err
+
 }
 
-func (repoPG *RepoDBPostgres) RequestOrderAccrual(balanceWD models.BalanceWithDraw) error {
-	return nil
+// # Запрос на списание средств
+//
+//	Создаем запрос на списание бонусных средств в счет заказа
+//
+// Входные параметры: models.RequestWithDraw
+func (repoPG *RepoDBPostgres) RequestOrderAccrual(User string, WithDraw models.RequestWithDraw) error {
+	ctx := context.Background()
+
+	SQLInsertRequest := `insert 
+	                       into WITHDRAWS ( order_num, user_id, amount, status, updated_at ) 
+		                 select @P_ORDER_NUM, user_id, 0, 'REGISTERED', current_timestamp from users where name_user = @P_USER_NAME`
+
+	_, err := repoPG.PGXPool.Exec(ctx, SQLInsertRequest,
+		pgx.NamedArgs{"P_ORDER_NUM": WithDraw.Order, "P_SUM_REQUEST": WithDraw.Sum, "P_USER_NAME": User},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return err
+
+}
+
+// GetUserWithdrawAll implements GopherMart.
+func (repoPG *RepoDBPostgres) GetUserWithdrawAll(User string) ([]models.WithDrawalsList, error) {
+	var (
+		withdrawList []models.WithDrawalsList
+		withdraw     models.WithDrawalsList
+		err          error
+	)
+	ctx := context.Background()
+
+	sqlGetWithdrawList := `select O.order_num
+	                            , O.amount
+						        , O.updated_at 
+						     from WITHDRAWS O
+						     join USERS     U on U.user_id = O.user_id 
+						    where U.name_user = @P_USER_NAME`
+
+	rows, err := repoPG.PGXPool.Query(ctx, sqlGetWithdrawList, pgx.NamedArgs{"P_USER_NAME": User})
+	if err != nil {
+		return withdrawList, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&withdraw.Order, &withdraw.Sum, &withdraw.DtProcessed)
+		if err != nil {
+			log.Println(err)
+		}
+
+		withdrawList = append(withdrawList, withdraw)
+	}
+
+	return withdrawList, err
 }
 
 // Формирование репозитория DB Postgres

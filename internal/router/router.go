@@ -22,11 +22,11 @@ func NewRouter(h *handlers.URLHandler, authConfig middlewares.AuthConfig) *chi.M
 		mux.Post("/api/user/register", h.PostUserRegister)
 		mux.Post("/api/user/login", h.PostUserLogin)
 		mux.Post("/api/user/orders", h.PostUserOrders)
-		mux.Post("/api/user/balance/withdraw", h.PostUserBalanceWithDraw)
+		mux.Post("/api/user/balance/withdraw", h.RequestWithdraw)
 
 		mux.Get("/api/user/orders", h.GetUserOrders)
 		mux.Get("/api/user/balance", h.GetUserBalance)
-		mux.Get("/api/user/withdrawals", h.GetUserBalanceWithDrawals)
+		mux.Get("/api/user/withdrawals", h.GetWithdrawals)
 	})
 
 	return mux
