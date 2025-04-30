@@ -130,7 +130,7 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookieW)
 	if header == 0 {
-		header = http.StatusAccepted
+		header = http.StatusOK
 	}
 	w.WriteHeader(header)
 }

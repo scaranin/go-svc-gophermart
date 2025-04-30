@@ -324,7 +324,7 @@ func (repoPG *RepoDBPostgres) RequestOrderAccrual(User string, WithDraw models.R
 
 	SQLInsertRequest := `insert 
 	                       into WITHDRAWS ( order_num, user_id, amount, status, updated_at ) 
-		                 select @P_ORDER_NUM, user_id, 0, 'REGISTERED', current_timestamp from users where name_user = @P_USER_NAME`
+		                 select @P_ORDER_NUM, user_id, @P_SUM_REQUEST, 'REGISTERED', current_timestamp from users where name_user = @P_USER_NAME`
 
 	_, err := repoPG.PGXPool.Exec(ctx, SQLInsertRequest,
 		pgx.NamedArgs{"P_ORDER_NUM": WithDraw.Order, "P_SUM_REQUEST": WithDraw.Sum, "P_USER_NAME": User},
