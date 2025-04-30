@@ -304,7 +304,7 @@ func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error
 	SQLSelectBalance := `select ( select sum(accrual) from ORDERS O where O.user_id = U.user_id )   accrual
 	                          , ( select sum(amount) from WITHDRAWS W where W.user_id = U.user_id ) withdraw
 	                       from USERS U 
-				          where U.user_name = @P_USER_NAME`
+				          where U.name_user = @P_USER_NAME`
 
 	err := repoPG.PGXPool.QueryRow(ctx, SQLSelectBalance,
 		pgx.NamedArgs{"P_USER_NAME": User},
