@@ -57,7 +57,7 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 	var count int
 
 	SQLExists := `select count(1) 
-	                form USERS 
+	                from USERS 
 				   where name_user = @P_NAME_USER 
 				     and pass_user = @P_PASS_USER`
 

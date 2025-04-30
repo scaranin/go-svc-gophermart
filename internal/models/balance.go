@@ -7,8 +7,8 @@ import (
 
 // Структура JSON. Получение текущего баланса пользователя
 type Balance struct {
-	Current   sql.NullFloat64 `json:"current"`
-	WithDrawn sql.NullFloat64 `json:"withdrawn"`
+	Current   float64 `json:"current"`
+	WithDrawn float64 `json:"withdrawn"`
 }
 
 // Структура JSON. Запрос на списание средств
@@ -19,7 +19,7 @@ type RequestWithDraw struct {
 
 // Структура JSON. Получение информации о выводе средств
 type WithDrawalsList struct {
-	Order       string          `json:"order"`
-	Sum         sql.NullFloat64 `json:"sum"`
-	DtProcessed time.Time       `json:"processed_at"` //Формат даты RFC3339
+	Order       string    `json:"order"`
+	Sum         float64   `json:"sum"`
+	DtProcessed time.Time `json:"processed_at"` //Формат даты RFC3339
 }
