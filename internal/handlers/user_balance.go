@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
@@ -82,10 +83,12 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if validateLuhn(Withdraw.Order) {
-		header = http.StatusUnprocessableEntity
-		log.Print("Bad order number")
-	}
+	/*
+		if validateLuhn(Withdraw.Order) {
+			header = http.StatusUnprocessableEntity
+			log.Print("Bad order number")
+		}
+	*/
 
 	Balance, err := h.Repo.GetUserBalance(user)
 	Balance.Current = Balance.Current - Balance.WithDrawn
@@ -102,6 +105,7 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(header)
 		return
 	} else {
+		fmt.Println("Withdraw ", Withdraw)
 		pgErr, ok = h.Repo.RequestOrderAccrual(user, Withdraw).(*pgconn.PgError)
 	}
 
