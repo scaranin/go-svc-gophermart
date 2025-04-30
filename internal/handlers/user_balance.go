@@ -88,6 +88,7 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Balance, err := h.Repo.GetUserBalance(user)
+	Balance.Current = Balance.Current - Balance.WithDrawn
 	if err != nil {
 		header = http.StatusInternalServerError
 		log.Println(err)
@@ -102,7 +103,7 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if Balance.Current-Balance.WithDrawn-Withdraw.Sum.Float64 < 0 {
+	if Balance.Current-Withdraw.Sum.Float64 < 0 {
 		header = http.StatusPaymentRequired
 		log.Print(pgErr)
 		w.WriteHeader(header)
