@@ -352,7 +352,9 @@ func (repoPG *RepoDBPostgres) GetUserWithdrawAll(User string) ([]models.WithDraw
 						        , O.updated_at 
 						     from WITHDRAWS O
 						     join USERS     U on U.user_id = O.user_id 
-						    where U.name_user = @P_USER_NAME`
+						    where U.name_user = @P_USER_NAME
+							order 
+							   by O.updated_at`
 
 	rows, err := repoPG.PGXPool.Query(ctx, sqlGetWithdrawList, pgx.NamedArgs{"P_USER_NAME": User})
 	if err != nil {

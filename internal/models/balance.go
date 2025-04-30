@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"time"
 )
 
@@ -13,8 +12,8 @@ type Balance struct {
 
 // Структура JSON. Запрос на списание средств
 type RequestWithDraw struct {
-	Order string          `json:"order"`
-	Sum   sql.NullFloat64 `json:"sum"`
+	Order string  `json:"order"`
+	Sum   float64 `json:"sum"`
 }
 
 // Структура JSON. Получение информации о выводе средств
