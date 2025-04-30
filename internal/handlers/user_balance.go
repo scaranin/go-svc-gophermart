@@ -89,12 +89,17 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	Balance, err := h.Repo.GetUserBalance(user)
 	if err != nil {
+		header = http.StatusInternalServerError
 		log.Println(err)
+		w.WriteHeader(header)
+		return
 	}
 
 	if Balance.Current-Balance.WithDrawn-Withdraw.Sum < 0 {
 		header = http.StatusPaymentRequired
 		log.Print(pgErr)
+		w.WriteHeader(header)
+		return
 	} else {
 		pgErr, ok = h.Repo.RequestOrderAccrual(user, Withdraw).(*pgconn.PgError)
 	}
@@ -112,12 +117,12 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	cookieW, err := h.TokenSvc.GenerateCookie(user)
 	if err != nil {
-		log.Fatal(err)
+		header = http.StatusUnauthorized
+		log.Print(err)
+		w.WriteHeader(header)
+		return
 	}
 
-	if err != nil {
-		log.Print(err.Error())
-	}
 	http.SetCookie(w, cookieW)
 	if header == 0 {
 		header = http.StatusAccepted
