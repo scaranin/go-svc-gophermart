@@ -30,7 +30,7 @@ func (h *URLHandler) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
+	Balance.Current = Balance.Current - Balance.WithDrawn
 	cookieW, err := h.TokenSvc.GenerateCookie(user)
 
 	if err != nil {
