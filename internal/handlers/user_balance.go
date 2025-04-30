@@ -95,7 +95,14 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if Balance.Current-Balance.WithDrawn-Withdraw.Sum < 0 {
+	if !Balance.Current.Valid || !Balance.WithDrawn.Valid || !Withdraw.Sum.Valid {
+		header = http.StatusInternalServerError
+		log.Println(err)
+		w.WriteHeader(header)
+		return
+	}
+
+	if Balance.Current.Float64-Balance.WithDrawn.Float64-Withdraw.Sum.Float64 < 0 {
 		header = http.StatusPaymentRequired
 		log.Print(pgErr)
 		w.WriteHeader(header)
