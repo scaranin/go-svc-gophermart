@@ -99,7 +99,9 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 			log.Print(pgErr)
 		}
 	}
-
+	if header == 0 {
+		header = http.StatusOK
+	}
 	w.WriteHeader(header)
 }
 
