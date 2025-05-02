@@ -14,15 +14,13 @@ import (
 
 // Получение текущего баланса счёта баллов лояльности пользователя
 func (h *URLHandler) GetUserBalance(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("auth_token")
 	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+
+	user, err := h.cookieProcessing(w, r)
+
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	Balance, err := h.Repo.GetUserBalance(user)
@@ -31,14 +29,6 @@ func (h *URLHandler) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	Balance.Current = Balance.Current - Balance.WithDrawn
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-
-	http.SetCookie(w, cookieW)
 
 	BalanceJSON, err := json.Marshal(Balance)
 	if err != nil {
@@ -61,14 +51,11 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		ok       bool
 		Withdraw models.RequestWithDraw
 	)
-	cookie, err := r.Cookie("auth_token")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+	user, err := h.cookieProcessing(w, r)
+
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	defer r.Body.Close()
@@ -82,13 +69,6 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	/*
-		if validateLuhn(Withdraw.Order) {
-			header = http.StatusUnprocessableEntity
-			log.Print("Bad order number")
-		}
-	*/
 
 	Balance, err := h.Repo.GetUserBalance(user)
 	Balance.Current = Balance.Current - Balance.WithDrawn
@@ -120,32 +100,18 @@ func (h *URLHandler) RequestWithdraw(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-	if err != nil {
-		header = http.StatusUnauthorized
-		log.Print(err)
-		w.WriteHeader(header)
-		return
-	}
-
-	http.SetCookie(w, cookieW)
-	if header == 0 {
-		header = http.StatusOK
-	}
 	w.WriteHeader(header)
 }
 
 // Получение информации о выводе средств с накопительного счёта пользователем
 func (h *URLHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("auth_token")
 	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+
+	user, err := h.cookieProcessing(w, r)
+
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	// Получаем заказы с актуальным статусом
@@ -154,13 +120,6 @@ func (h *URLHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-	http.SetCookie(w, cookieW)
 
 	WithdrawListJSON, err := json.Marshal(WithdrawList)
 	if err != nil {

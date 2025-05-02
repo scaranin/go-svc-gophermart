@@ -4,6 +4,8 @@ import (
 	"go-svc-gophermart/internal/client"
 	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/repositories"
+	"log"
+	"net/http"
 	"runtime"
 	"unicode"
 )
@@ -30,6 +32,32 @@ func (h URLHandler) GetCurrentMethodName() string {
 	fullName := fn.Name()
 
 	return fullName
+}
+
+// Обработка cookie
+func (h *URLHandler) cookieProcessing(w http.ResponseWriter, r *http.Request) (string, error) {
+	var (
+		user string
+		err  error
+	)
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return user, err
+	}
+	user, err = h.TokenSvc.GetUserFromCookie(cookie)
+	if err != nil {
+		log.Println(err)
+	}
+
+	cookieW, err := h.TokenSvc.GenerateCookie(user)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+	http.SetCookie(w, cookieW)
+
+	return user, err
 }
 
 // Проверка номера договора алгоритмом Луна

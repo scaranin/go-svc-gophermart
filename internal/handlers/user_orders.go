@@ -12,31 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-func (h *URLHandler) CookieProcessing(w http.ResponseWriter, r *http.Request) (string, error) {
-	var (
-		user string
-		err  error
-	)
-	cookie, err := r.Cookie("auth_token")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return user, err
-	}
-	user, err = h.TokenSvc.GetUserFromCookie(cookie)
-	if err != nil {
-		log.Println(err)
-	}
-
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-	http.SetCookie(w, cookieW)
-
-	return user, err
-}
-
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
 //
 // Возможные коды ответа:
@@ -48,7 +23,7 @@ func (h *URLHandler) CookieProcessing(w http.ResponseWriter, r *http.Request) (s
 func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	user, err := h.CookieProcessing(w, r)
+	user, err := h.cookieProcessing(w, r)
 
 	if err != nil {
 		log.Println(err)
@@ -119,7 +94,7 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 		ok     bool
 	)
 
-	user, err := h.CookieProcessing(w, r)
+	user, err := h.cookieProcessing(w, r)
 
 	if err != nil {
 		log.Println(err)
