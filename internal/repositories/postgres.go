@@ -83,7 +83,7 @@ func (repoPG *RepoDBPostgres) UserLogin(user models.User) error {
 // Проверяет наличие заказа с указанными даннымы в БД: текущий пользователь/другой пользователь
 // Добавляет заказ, если нет
 //
-// Входные параметры: models.OrderShort
+// Входные параметры: models.OrderShort (Базовая структура заказа)
 func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 	ctx := context.Background()
 	var orderUser string
@@ -136,6 +136,7 @@ func (repoPG *RepoDBPostgres) UserOrderCreate(Order models.OrderShort) error {
 // # Получение всех заказов не в конечных статусах
 //
 // Отбирает заказы для отправки запроса в сервис Accrual
+// Выходные параметры: []models.OrderAccrual (Структура JSON. Получение информации о расчёте начислений баллов лояльности)
 func (repoPG *RepoDBPostgres) GetAccrualsFull() ([]models.OrderAccrual, error) {
 	ctx := context.Background()
 	var (
@@ -176,7 +177,8 @@ func (repoPG *RepoDBPostgres) GetAccrualsFull() ([]models.OrderAccrual, error) {
 //
 //	Отбирает заказы пользователя в статусе отличном от конечного
 //
-// Входные параметры: User
+// Входные параметры: User (наименование пользователя)
+// Выходные параметры: []models.OrderAccrual (Структура JSON. Получение информации о расчёте начислений баллов лояльности)
 func (repoPG *RepoDBPostgres) GetAccruals(User string) ([]models.OrderAccrual, error) {
 	ctx := context.Background()
 	var (
@@ -216,6 +218,11 @@ func (repoPG *RepoDBPostgres) GetAccruals(User string) ([]models.OrderAccrual, e
 
 }
 
+// # Обновление заказа в части бонусов
+//
+//	Обновляет данные по заказу данными, полученными из внешнего сервиса
+//
+// Входные параметры: []models.OrderAccrual (Структура JSON. Получение информации о расчёте начислений баллов лояльности)
 func (repoPG *RepoDBPostgres) UpdateOrderList(OrderAccrualArr []models.OrderAccrual) error {
 	ctx := context.Background()
 	tx, err := repoPG.PGXPool.Begin(ctx)
@@ -250,11 +257,15 @@ func (repoPG *RepoDBPostgres) UpdateOrderList(OrderAccrualArr []models.OrderAccr
 //	Возвращает список заказов: текущий пользователь/другой пользователь
 //
 // Входные параметры: User
-// Выходные параметры: []models.Order
+// Выходные параметры: []models.Order (Структура JSON для получения списка загруженных номеров заказов)
 func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error) {
-	var orderList []models.Order
-	var order models.Order
 	ctx := context.Background()
+
+	var (
+		orderList []models.Order
+		order     models.Order
+		err       error
+	)
 
 	sqlGetOrderList := `select O.order_num
 	                         , O.status
@@ -264,7 +275,6 @@ func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error)
 						  join USERS  U on U.user_id = O.user_id 
 						 where U.name_user = @P_USER_NAME`
 
-	var err error
 	rows, err := repoPG.PGXPool.Query(ctx, sqlGetOrderList, pgx.NamedArgs{"P_USER_NAME": User})
 	if err != nil {
 		return orderList, err
@@ -287,16 +297,12 @@ func (repoPG *RepoDBPostgres) GetUserOrders(User string) ([]models.Order, error)
 	return orderList, err
 }
 
-// # Получение списка заказов пользователя. Внешний сервис
+// # Получение текущего баланса пользователя
 //
-//	Возвращает список заказов пользователя влючая статус и начисленные баллы
+//	Возвращает баланс пользователя
 //
 // Входные параметры: User
-func (repoPG *RepoDBPostgres) GetBalanceAccrual(User string) ([]models.OrderAccrual, error) {
-	var OrderAccrualList []models.OrderAccrual
-	return OrderAccrualList, nil
-}
-
+// Выходные параметры: models.Balance (Структура JSON для получения текущего баланса пользователя)
 func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error) {
 	ctx := context.Background()
 	var Balnce models.Balance
@@ -318,7 +324,9 @@ func (repoPG *RepoDBPostgres) GetUserBalance(User string) (models.Balance, error
 //
 //	Создаем запрос на списание бонусных средств в счет заказа
 //
-// Входные параметры: models.RequestWithDraw
+// Входные параметры:
+//   - User (Наименование пользователя)
+//   - models.RequestWithDraw (Структура JSON. Запрос на списание средств)
 func (repoPG *RepoDBPostgres) RequestOrderAccrual(User string, WithDraw models.RequestWithDraw) error {
 	ctx := context.Background()
 
@@ -338,14 +346,20 @@ func (repoPG *RepoDBPostgres) RequestOrderAccrual(User string, WithDraw models.R
 
 }
 
-// GetUserWithdrawAll implements GopherMart.
+// Получение информации о выводе средств
+//
+//	Получаем список операций по выводу бонусных средств пользователя
+//
+// Входные параметры: User (Наименование пользователя)
+// Выходные параметры: []models.WithDrawalsList (Структура JSON для получения информации о выводе средств)
 func (repoPG *RepoDBPostgres) GetUserWithdrawAll(User string) ([]models.WithDrawalsList, error) {
+	ctx := context.Background()
+
 	var (
 		withdrawList []models.WithDrawalsList
 		withdraw     models.WithDrawalsList
 		err          error
 	)
-	ctx := context.Background()
 
 	sqlGetWithdrawList := `select O.order_num
 	                            , O.amount
@@ -377,9 +391,12 @@ func (repoPG *RepoDBPostgres) GetUserWithdrawAll(User string) ([]models.WithDraw
 // Формирование репозитория DB Postgres
 //
 // Входные параметры: cft config.ConfigGM - конфигурация сервиса строка подключения
+// Выходные параметры: Postgres реализация интерфейса
 func NewRepository(cfg config.ConfigGM) (GopherMart, error) {
-	var repoGM RepoDBPostgres
 	ctx := context.Background()
+
+	var repoGM RepoDBPostgres
+
 	pool, err := pgxpool.New(ctx, cfg.DSN)
 	if err != nil {
 		return &repoGM, err
@@ -391,10 +408,12 @@ func NewRepository(cfg config.ConfigGM) (GopherMart, error) {
 
 }
 
+// Закрытие соединений Postgres из пула
 func (repoPG *RepoDBPostgres) Close() {
 	repoPG.PGXPool.Close()
 }
 
+// Создание БД со схемой
 func (repoPG *RepoDBPostgres) CreateDBScheme(ctx context.Context, MigrationPath string) error {
 	conn, err := repoPG.PGXPool.Acquire(context.Background())
 	if err != nil {

@@ -33,15 +33,19 @@ func NewAccrualClient(baseURL string) *AccrualClient {
 
 // Получение информации о расчёте начислений баллов лояльности по заказу
 func (accrual *AccrualClient) GetOrder(orderNum string) (models.OrderAccrual, error) {
-	log.Println("GetOrder")
+
 	var order models.OrderAccrual
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
 	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/orders/%s", accrual.baseURL, orderNum), nil)
 	if err != nil {
 		log.Println(err)
 		return order, err
 	}
+
 	resp, err := accrual.client.Do(req)
 	if err != nil {
 		log.Println(err)
@@ -49,7 +53,6 @@ func (accrual *AccrualClient) GetOrder(orderNum string) (models.OrderAccrual, er
 	}
 	defer resp.Body.Close()
 
-	log.Println("resp.StatusCode ", resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
 		return order, errors.New(resp.Status)
 	}
@@ -61,6 +64,7 @@ func (accrual *AccrualClient) GetOrder(orderNum string) (models.OrderAccrual, er
 	return order, nil
 }
 
+// Запуск процесса получения статуса бонусов по заказу
 func (accrual *AccrualClient) RunTickerWithContext() error {
 	ctx := context.Background()
 	go func() {

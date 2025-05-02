@@ -12,6 +12,31 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+func (h *URLHandler) CookieProcessing(w http.ResponseWriter, r *http.Request) (string, error) {
+	var (
+		user string
+		err  error
+	)
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return user, err
+	}
+	user, err = h.TokenSvc.GetUserFromCookie(cookie)
+	if err != nil {
+		log.Println(err)
+	}
+
+	cookieW, err := h.TokenSvc.GenerateCookie(user)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+	http.SetCookie(w, cookieW)
+
+	return user, err
+}
+
 // Получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
 //
 // Возможные коды ответа:
@@ -21,17 +46,14 @@ import (
 // - `401` — пользователь не авторизован.
 // - `500` — внутренняя ошибка сервера.
 func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("auth_token")
 	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+
+	user, err := h.CookieProcessing(w, r)
+
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	fmt.Println("user ", user)
 
 	// Получаем список заказов пользователя не в конечном статусе
 	OrderAccrualList, err := h.Repo.GetAccruals(user)
@@ -65,13 +87,6 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-	http.SetCookie(w, cookieW)
-
 	OrdersJSON, err := json.Marshal(Orders)
 	if err != nil {
 		log.Println(err)
@@ -103,16 +118,13 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 		pgErr  *pgconn.PgError
 		ok     bool
 	)
-	cookie, err := r.Cookie("auth_token")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user, err := h.TokenSvc.GetUserFromCookie(cookie)
+
+	user, err := h.CookieProcessing(w, r)
+
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	fmt.Print("user", user)
 
 	defer r.Body.Close()
 	_, err = buf.ReadFrom(r.Body)
@@ -121,41 +133,31 @@ func (h *URLHandler) PostUserOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	orderNumber := buf.String()
-	fmt.Print("orderNumber", orderNumber)
 
 	if !validateLuhn(orderNumber) {
 		pgErr, ok = h.Repo.UserOrderCreate(models.OrderShort{User: user, OrderNumber: orderNumber}).(*pgconn.PgError)
 	} else {
 		header = http.StatusUnprocessableEntity
-		log.Print("Bad order number")
+		log.Println("Bad order number")
 	}
 
 	if ok {
 		switch pgErr.Code {
 		case pgerrcode.SuccessfulCompletion:
 			header = http.StatusAccepted
-			log.Print(pgErr)
+			log.Println(pgErr)
 		case "-1":
 			header = http.StatusOK
-			log.Print(pgErr)
+			log.Println(pgErr)
 		case "-2":
 			header = http.StatusConflict
-			log.Print(pgErr)
+			log.Println(pgErr)
 		default:
 			header = http.StatusInternalServerError
 			log.Print(pgErr)
 		}
 	}
 
-	cookieW, err := h.TokenSvc.GenerateCookie(user)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err != nil {
-		log.Print(err.Error())
-	}
-	http.SetCookie(w, cookieW)
 	if header == 0 {
 		header = http.StatusAccepted
 	}

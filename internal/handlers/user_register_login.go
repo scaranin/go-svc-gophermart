@@ -16,26 +16,25 @@ type RegisterOrLogin func(models.User) error
 // Регистрация или аутентификация пользователя.
 func (h *URLHandler) UserRegisterOrLogin(w http.ResponseWriter, r *http.Request, t string) {
 	var (
-		err    error
-		user   models.User
-		resp   []byte
-		buf    bytes.Buffer
-		header int
+		err             error
+		user            models.User
+		resp            []byte
+		buf             bytes.Buffer
+		header          int
+		registerOrLogin RegisterOrLogin
 	)
 
-	defer r.Body.Close()
 	_, err = buf.ReadFrom(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 
 	if err = json.Unmarshal(buf.Bytes(), &user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	var registerOrLogin RegisterOrLogin
 
 	if t == "Register" {
 		registerOrLogin = h.Repo.UserRegister
@@ -68,9 +67,6 @@ func (h *URLHandler) UserRegisterOrLogin(w http.ResponseWriter, r *http.Request,
 		log.Fatal(err)
 	}
 
-	if err != nil {
-		log.Print(err.Error())
-	}
 	http.SetCookie(w, cookieW)
 	if header == 0 {
 		header = http.StatusOK
