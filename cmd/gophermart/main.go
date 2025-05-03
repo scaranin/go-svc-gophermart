@@ -49,7 +49,7 @@ func StartServer(serverURL string, router *chi.Mux) error {
 	return err
 }
 
-func main() {
+func InitSvc() error {
 	cfg, err := config.NewConfig()
 
 	if err != nil {
@@ -81,7 +81,11 @@ func main() {
 
 	err = StartServer(cfg.ServerURL, router)
 
-	if err != nil {
+	return err
+}
+
+func main() {
+	if err := InitSvc(); err != nil {
 		log.Fatal(err)
 	}
 }

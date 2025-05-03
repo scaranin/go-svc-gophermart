@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"go-svc-gophermart/internal/models"
 	"log"
 	"net/http"
@@ -36,7 +35,7 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	fmt.Println("OrderAccrual ", OrderAccrualList)
+
 	var OrderList []models.OrderAccrual
 	for _, OrderItem := range OrderAccrualList {
 		Order, err := h.AccrualSvc.GetOrder(OrderItem.Order)
@@ -61,11 +60,15 @@ func (h *URLHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	if len(Orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	OrdersJSON, err := json.Marshal(Orders)
+
 	if err != nil {
 		log.Println(err)
-
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

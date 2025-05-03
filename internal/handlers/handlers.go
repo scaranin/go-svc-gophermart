@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"go-svc-gophermart/internal/client"
+	"go-svc-gophermart/internal/config"
 	"go-svc-gophermart/internal/middlewares"
 	"go-svc-gophermart/internal/repositories"
 	"log"
 	"net/http"
 	"runtime"
 	"unicode"
+
+	"github.com/go-chi/chi"
 )
 
 // Основная структура со списком обработчиков
@@ -82,4 +85,64 @@ func validateLuhn(orderNumber string) bool {
 	}
 
 	return sum%10 == 0
+}
+
+// Для тестов
+func InitHandlerTest() (URLHandler, error) {
+	cfg, err := config.NewConfig()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	var h URLHandler
+
+	h.Repo, err = repositories.NewRepository(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tokenSvc := middlewares.NewTokenService(cfg.SecretKey)
+	h.TokenSvc = &tokenSvc
+	accrualSvc := client.NewAccrualClient(cfg.ASAddress)
+	accrualSvc.Repo = h.Repo
+	h.AccrualSvc = accrualSvc
+	accrualSvc.RunTickerWithContext()
+
+	authConfig := middlewares.NewAuthConfig(cfg.SecretKey)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Up!")
+
+	mux := chi.NewRouter()
+	authService := middlewares.NewAuthService(authConfig.SecretKey)
+
+	authMiddleware := middlewares.WithAuth(&authService)
+
+	mux.Use(middlewares.WithLogging, authMiddleware)
+
+	mux.Route("/", func(mux chi.Router) {
+		mux.Post("/api/user/register", h.PostUserRegister)
+		mux.Post("/api/user/login", h.PostUserLogin)
+		mux.Post("/api/user/orders", h.PostUserOrders)
+		mux.Post("/api/user/balance/withdraw", h.RequestWithdraw)
+
+		mux.Get("/api/user/orders", h.GetUserOrders)
+		mux.Get("/api/user/balance", h.GetUserBalance)
+		mux.Get("/api/user/withdrawals", h.GetWithdrawals)
+	})
+
+	server := http.Server{
+		Addr:    "localhost:8080",
+		Handler: mux,
+	}
+
+	go func() {
+		if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	return h, err
 }

@@ -420,8 +420,12 @@ func (repoPG *RepoDBPostgres) CreateDBScheme(ctx context.Context, MigrationPath 
 		return err
 	}
 	defer conn.Release()
-
-	migrationsDir := MigrationPath
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	wd = strings.Replace(wd, `\internal\handlers`, ``, 1)
+	migrationsDir := filepath.Join(wd, MigrationPath)
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return err
