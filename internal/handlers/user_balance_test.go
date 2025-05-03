@@ -53,7 +53,7 @@ func TestURLHandler_GetUserBalance(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var user models.User = models.User{Login: tt.want.login, Password: tt.want.password}
+			user := models.User{Login: tt.want.login, Password: tt.want.password}
 
 			jsonUser, err := json.Marshal(user)
 			if err != nil {

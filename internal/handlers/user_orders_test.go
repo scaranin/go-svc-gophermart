@@ -53,7 +53,8 @@ func TestURLHandler_GetUserOrders(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var user models.User = models.User{Login: tt.want.login, Password: tt.want.password}
+
+			user := models.User{Login: tt.want.login, Password: tt.want.password}
 
 			jsonUser, err := json.Marshal(user)
 			if err != nil {
@@ -100,7 +101,7 @@ func TestURLHandler_GetUserOrders(t *testing.T) {
 				fmt.Println(err)
 				return
 			}
-			defer resp.Body.Close()
+			defer respOrder.Body.Close()
 
 			bodyOrder, err := io.ReadAll(respOrder.Body)
 			if err != nil {
