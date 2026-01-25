@@ -1,0 +1,11 @@
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    order_num TEXT,
+    user_id NUMERIC NOT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    accrual DECIMAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
